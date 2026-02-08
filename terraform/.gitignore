@@ -1,0 +1,12 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+localstack_providers_override.tf
+
+# terraform-local (wrapper / clone)
+.venv/
+terraform-local/

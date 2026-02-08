@@ -1,0 +1,82 @@
+services:
+  auth:
+    build:
+      context: .
+      dockerfile: auth/Dockerfile
+    ports:
+      - "49051:49051"
+    volumes:
+      - auth-data:/data
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      GITHUB_REDIRECT_URI: ${GITHUB_REDIRECT_URI:-}
+    restart: "no"
+
+  filemanager:
+    build:
+      context: .
+      dockerfile: filemanager/Dockerfile
+    ports:
+      - "48051:48051"
+    volumes:
+      - filemanager-data:/data
+    # So filemanager can reach LocalStack on host (e.g. lifecycle purge → S3 delete)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      AUTH_GRPC_URL: ${AUTH_GRPC_URL:-auth:49051}
+      BUCKET_TOKEN_SECRET_KEY: ${BUCKET_TOKEN_SECRET_KEY:-}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      # Server-side S3 calls (delete, etc.): reach LocalStack from container
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://host.docker.internal:4566}
+      # Presigned URLs (PUT/GET): must be reachable by the browser → use localhost when API is on localhost
+      S3_PRESIGNED_ENDPOINT: ${S3_PRESIGNED_ENDPOINT:-http://localhost:4566}
+      S3_REGION: ${S3_REGION:-}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-}
+      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-true}
+    restart: "no"
+
+  lifecycle:
+    build:
+      context: .
+      dockerfile: lifecycle/Dockerfile
+    ports:
+      - "50051:50051"
+    volumes:
+      - lifecycle-data:/data
+    environment:
+      FILEMANAGER_GRPC_URL: ${FILEMANAGER_GRPC_URL:-filemanager:48051}
+    restart: "no"
+
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    ports:
+      - "7777:7777"
+    # gRPC URLs must be service names (auth, filemanager, lifecycle) when using Docker so containers can reach each other. Omit from .env or set to auth:49051, filemanager:48051, lifecycle:50051.
+    environment:
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      AUTH_GRPC_URL: ${AUTH_GRPC_URL:-auth:49051}
+      FILEMANAGER_GRPC_URL: ${FILEMANAGER_GRPC_URL:-filemanager:48051}
+      LIFECYCLE_GRPC_URL: ${LIFECYCLE_GRPC_URL:-lifecycle:50051}
+    restart: "no"
+
+  # Next.js client; NEXT_PUBLIC_API_URL is build-time only (rebuild image to change it)
+  client:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:7777}
+    ports:
+      - "3000:3000"
+    restart: "no"
+
+volumes:
+  auth-data:
+  filemanager-data:
+  lifecycle-data:

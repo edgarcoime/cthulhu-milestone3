@@ -1,0 +1,181 @@
+syntax = "proto3";
+package pb;
+option go_package = "github.com/cthulhu-platform/proto/pkg/filemanager";
+
+import "google/protobuf/timestamp.proto";
+
+// Bucket: storage container for files (mirrors buckets table)
+message Bucket {
+    string id = 1;                           // storage_id/session_id
+    optional string password_hash = 2;       // NULL = public access
+    google.protobuf.Timestamp created_at = 3;
+    google.protobuf.Timestamp updated_at = 4;
+}
+
+// File: file metadata and references (mirrors files table)
+message File {
+    int64 id = 1;                            // Numeric PK
+    string string_id = 2;                    // Surrogate key, S3 path segment
+    string bucket_id = 3;
+    string original_name = 4;
+    optional string owner_id = 5;            // Cross-db ref to auth.users.id
+    int64 size = 6;                          // File size in bytes
+    string content_type = 7;                 // MIME type
+    string s3_key = 8;
+    google.protobuf.Timestamp created_at = 9;
+}
+
+// BucketAdmin: many-to-many user-bucket admin (mirrors bucket_admins table)
+message BucketAdmin {
+    string user_id = 1;                      // Cross-db ref to auth.users.id
+    string bucket_id = 2;
+    google.protobuf.Timestamp created_at = 3;
+}
+
+// --- PrepareUpload (presigned URL flow) ---
+message FileMeta {
+    string original_name = 1;
+    int64 size = 2;
+    string content_type = 3;
+}
+
+message PrepareUploadRequest {
+    repeated FileMeta files = 1;
+    optional string user_id = 2;             // If set, added as bucket admin after validation
+    optional string password = 3;            // If set, bucket is protected
+}
+
+message FileUploadSlot {
+    string string_id = 1;
+    string presigned_put_url = 2;
+    string s3_key = 3;
+}
+
+message PrepareUploadResponse {
+    string storage_id = 1;
+    repeated FileUploadSlot slots = 2;
+    string error = 3;
+}
+
+// --- ConfirmUpload (after client PUTs to presigned URLs) ---
+message FileMetaWithStringId {
+    string string_id = 1;
+    string original_name = 2;
+    int64 size = 3;
+    string content_type = 4;
+}
+
+message ConfirmUploadRequest {
+    string storage_id = 1;
+    repeated FileMetaWithStringId files = 2;
+}
+
+message ConfirmUploadResponse {
+    bool success = 1;
+    string storage_id = 2;
+    repeated FileInfoResult files = 3;
+    int64 total_size = 4;
+    string error = 5;
+}
+
+message FileInfoResult {
+    string original_name = 1;
+    string string_id = 2;
+    string key = 3;
+    int64 size = 4;
+    string content_type = 5;
+}
+
+// --- PrepareDownload (presigned GET URL; for protected buckets, bucket_access_token required) ---
+message PrepareDownloadRequest {
+    string storage_id = 1;
+    string string_id = 2;                    // file string_id (e.g. from URL path)
+    optional string bucket_access_token = 3; // required when bucket is password-protected
+}
+
+message PrepareDownloadResponse {
+    string presigned_get_url = 1;
+    string original_name = 2;
+    string content_type = 3;
+    int64 size = 4;
+    string error = 5;
+}
+
+// --- RetrieveFileBucket ---
+message RetrieveFileBucketRequest {
+    string storage_id = 1;
+}
+
+message RetrieveFileBucketResponse {
+    string storage_id = 1;
+    repeated FileInfoResult files = 2;
+    int64 total_size = 3;
+    string error = 4;
+}
+
+// --- GetBucketAdmins ---
+message AdminInfo {
+    string user_id = 1;
+    string email = 2;
+    optional string username = 3;
+    optional string avatar_url = 4;
+    bool is_owner = 5;
+    int64 created_at = 6;
+}
+
+message GetBucketAdminsRequest {
+    string bucket_id = 1;
+}
+
+message GetBucketAdminsResponse {
+    string bucket_id = 1;
+    AdminInfo owner = 2;
+    repeated AdminInfo admins = 3;
+    string error = 4;
+}
+
+// --- IsBucketProtected ---
+message IsBucketProtectedRequest {
+    string bucket_id = 1;
+}
+
+message IsBucketProtectedResponse {
+    bool protected = 1;
+    string error = 2;
+}
+
+// --- AuthenticateBucket ---
+message AuthenticateBucketRequest {
+    string bucket_id = 1;
+    string password = 2;
+    optional string user_id = 3;
+    optional string auth_token_id = 4;
+}
+
+message AuthenticateBucketResponse {
+    string access_token = 1;
+    int32 expires_in = 2;
+    string error = 3;
+}
+
+// --- DeleteBucket ---
+message DeleteBucketRequest {
+    string bucket_id = 1;
+}
+
+message DeleteBucketResponse {
+    bool success = 1;
+    int64 files_deleted = 2;
+    string error = 3;
+}
+
+service FilemanagerService {
+    rpc PrepareUpload(PrepareUploadRequest) returns (PrepareUploadResponse);
+    rpc ConfirmUpload(ConfirmUploadRequest) returns (ConfirmUploadResponse);
+    rpc PrepareDownload(PrepareDownloadRequest) returns (PrepareDownloadResponse);
+    rpc RetrieveFileBucket(RetrieveFileBucketRequest) returns (RetrieveFileBucketResponse);
+    rpc GetBucketAdmins(GetBucketAdminsRequest) returns (GetBucketAdminsResponse);
+    rpc IsBucketProtected(IsBucketProtectedRequest) returns (IsBucketProtectedResponse);
+    rpc AuthenticateBucket(AuthenticateBucketRequest) returns (AuthenticateBucketResponse);
+    rpc DeleteBucket(DeleteBucketRequest) returns (DeleteBucketResponse);
+}

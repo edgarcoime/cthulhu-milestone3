@@ -1,0 +1,38 @@
+[tools]
+go = "1.25.6"
+protoc = "latest"
+# Go plugins and tools
+"go:google.golang.org/protobuf/cmd/protoc-gen-go" = "latest"
+"go:google.golang.org/grpc/cmd/protoc-gen-go-grpc" = "latest"
+"go:github.com/sqlc-dev/sqlc/cmd/sqlc" = "latest"
+
+[tasks.proto]
+description = "Compile all protobuf files into Go packages"
+run = """
+protoc --proto_path=proto/proto \
+  --go_out=proto --go_opt=module=github.com/cthulhu-platform/proto \
+  --go-grpc_out=proto --go-grpc_opt=module=github.com/cthulhu-platform/proto \
+  proto/proto/*.proto
+cd proto && go mod tidy
+"""
+sources = ["proto/proto/*.proto"]
+outputs = ["proto/pkg/**/*.go"]
+
+[tasks.sqlc]
+description = "Generate Go code from SQL for auth and filemanager"
+run = """
+echo "Generating sqlc for auth..."
+(cd auth/internal/repository/sqlc && sqlc generate)
+echo "Generating sqlc for filemanager..."
+(cd filemanager/internal/repository/sqlc && sqlc generate)
+"""
+sources = [
+  "auth/internal/repository/sqlc/*.sql",
+  "auth/internal/repository/sqlc/sqlc.yaml",
+  "filemanager/internal/repository/sqlc/*.sql",
+  "filemanager/internal/repository/sqlc/sqlc.yaml"
+]
+outputs = [
+  "auth/internal/repository/sqlc/db/*.go",
+  "filemanager/internal/repository/sqlc/db/*.go"
+]

@@ -1,0 +1,32 @@
+# Git
+.git
+.gitignore
+
+# Go
+**/*.db
+**/*.db-journal
+**/*.test
+**/tmp/
+**/bin/
+
+# Node (client)
+**/node_modules/
+**/dist/
+**/.next/
+**/out/
+
+# Terraform
+**/.terraform/
+**/*.tfstate*
+
+# Mise/Env
+.mise.toml
+mise.toml
+.env
+*.env
+
+# IDEs
+.vscode/
+.idea/
+.cursor/
+generation_notes.md

@@ -1,0 +1,11 @@
+.logs/
+.pids/
+.cursor/
+
+examples/
+bin/
+tmp/
+
+*.db
+
+**/.env

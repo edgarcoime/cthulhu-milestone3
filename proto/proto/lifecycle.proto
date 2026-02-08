@@ -1,0 +1,44 @@
+syntax = "proto3";
+package pb;
+option go_package = "github.com/cthulhu-platform/proto/pkg/lifecycle";
+
+import "google/protobuf/timestamp.proto";
+
+message Lifecycle {
+    int32 id = 1;
+    string bucket_slug = 2;
+    google.protobuf.Timestamp expires_at = 3;
+    google.protobuf.Timestamp created_at = 4;
+    google.protobuf.Timestamp updated_at = 5;
+}
+
+message PostLifecycleRequest {
+    string bucket_slug = 1;
+    google.protobuf.Timestamp expires_at = 2;
+}
+
+message PostLifecycleResponse {
+    Lifecycle lifecycle = 1;
+}
+
+message GetLifecycleRequest {
+    string bucket_slug = 1;
+}
+
+message GetLifecycleResponse {
+    Lifecycle lifecycle = 1;
+}
+
+message DeleteLifecycleRequest {
+    string bucket_slug = 1;
+}
+
+message DeleteLifecycleResponse {
+    bool success = 1;
+}
+
+service LifecycleService {
+    rpc PostLifecycle(PostLifecycleRequest) returns (PostLifecycleResponse);
+    rpc GetLifecycle(GetLifecycleRequest) returns (GetLifecycleResponse);
+    rpc DeleteLifecycle(DeleteLifecycleRequest) returns (DeleteLifecycleResponse);
+}

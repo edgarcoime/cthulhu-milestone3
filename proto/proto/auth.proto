@@ -1,0 +1,106 @@
+syntax = "proto3";
+package pb;
+option go_package = "github.com/cthulhu-platform/proto/pkg/auth";
+
+import "google/protobuf/timestamp.proto";
+
+// User: core user identity (mirrors users table)
+message User {
+    string id = 1;                    // UUID
+    string oauth_provider = 2;       // 'github', 'google', etc.
+    string oauth_user_id = 3;         // Provider's user ID
+    string email = 4;
+    optional string username = 5;
+    optional string avatar_url = 6;
+    google.protobuf.Timestamp created_at = 7;
+    google.protobuf.Timestamp updated_at = 8;
+    optional google.protobuf.Timestamp deleted_at = 9;  // NULL if active
+}
+
+// RefreshToken: refresh token storage (mirrors refresh_tokens table)
+message RefreshToken {
+    string id = 1;                   // UUID
+    string user_id = 2;
+    string token_hash = 3;           // SHA-256 hash
+    google.protobuf.Timestamp expires_at = 4;
+    google.protobuf.Timestamp created_at = 5;
+    optional google.protobuf.Timestamp revoked_at = 6;
+    optional string revoked_reason = 7;  // 'user_logout', 'expired', etc.
+}
+
+// OAuthSession: OAuth flow state (mirrors oauth_sessions table)
+message OAuthSession {
+    string state = 1;                // UUID
+    string provider = 2;
+    string code_verifier = 3;        // PKCE
+    string code_challenge = 4;
+    string redirect_uri = 5;
+    google.protobuf.Timestamp expires_at = 6;
+    google.protobuf.Timestamp created_at = 7;
+}
+
+// UserInfo: user identity for API responses (no timestamps)
+message UserInfo {
+    string id = 1;
+    string email = 2;
+    string username = 3;
+    string avatar_url = 4;
+}
+
+// --- InitiateOAuth ---
+message InitiateOAuthRequest {
+    string provider = 1;
+}
+
+message InitiateOAuthResponse {
+    string redirect_url = 1;
+}
+
+// --- HandleOAuthCallback ---
+message HandleOAuthCallbackRequest {
+    string provider = 1;
+    string code = 2;
+    string state = 3;
+}
+
+message HandleOAuthCallbackResponse {
+    string access_token = 1;
+    string refresh_token = 2;
+    UserInfo user = 3;
+}
+
+// --- ValidateToken ---
+message ValidateTokenRequest {
+    string token = 1;
+}
+
+message ValidateTokenResponse {
+    UserInfo user = 1;
+}
+
+// --- RefreshToken ---
+message RefreshTokenRequest {
+    string refresh_token = 1;
+}
+
+message RefreshTokenResponse {
+    string access_token = 1;
+    string refresh_token = 2;
+}
+
+// --- Logout ---
+message LogoutRequest {
+    string access_token = 1;
+}
+
+message LogoutResponse {
+    bool success = 1;
+}
+
+service AuthService {
+    rpc InitiateOAuth(InitiateOAuthRequest) returns (InitiateOAuthResponse);
+    rpc HandleOAuthCallback(HandleOAuthCallbackRequest) returns (HandleOAuthCallbackResponse);
+    rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+    rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+    rpc Logout(LogoutRequest) returns (LogoutResponse);
+}

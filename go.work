@@ -1,0 +1,10 @@
+go 1.25.6
+
+use (
+    ./gateway
+    ./filemanager
+    ./auth
+    ./lifecycle
+    ./common
+    ./proto
+)
