@@ -13,4 +13,4 @@
     *   *Focus:* A comprehensive title that covers the application domain (anonymous data), the architecture, and the specific technical contributions (temporal lifecycles, security).
 
 5.  **Evaluating the Performance of Event-Driven Architectures in High-Throughput, Privacy-Centric File Sharing Applications**
-    *   *Focus:* detailed technical evaluation, suitable if your report includes performance metrics or architectural analysis of the RabbitMQ/Golang stack.
+    *   *Focus:* detailed technical evaluation, suitable if your report includes performance metrics or architectural analysis of the gRPC, AWS SQS, and Golang stack.

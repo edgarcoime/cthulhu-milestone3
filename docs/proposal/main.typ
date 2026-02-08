@@ -12,7 +12,7 @@
 
 #show: body => title-page(
   title: doc-title,
-  sub: [COMP 8800 Major Project \ Ashkan Jangodaz],
+  sub: [COMP 8900 Major Project \ Ashkan Jangodaz],
   email: "mailto:ecoime1@my.bcit.ca",
   osid: [A01003601],
   fill: white,
@@ -62,7 +62,9 @@
   [2.5], [2025-11-14], [Expand Milestone 4 to 6 weeks. Add details about service performance requirements virus scanning will be computationally expensive. Add SAGA transaction requirements for if file is malicious.],
   [2.6], [2025-11-17], [Added more details for Milestone 4 about virus scanning properties, detection requirements, and test acceptance thresholds.],
   [2.7], [2025-11-21], [Added Milestone 5 details about online functionality and HTTPS thorough valid SSL certs. Add requirement for E2E user testing to ensure Cthulhu platform working properly. Add details about CI/CD pipeline, rollbacks, beta environments, and Docker image registry integration.],
-  [3.0], [2025-11-21], [Submission for Proposal draft 3]
+  [3.0], [2025-11-21], [Submission for Proposal draft 3],
+  [3.1], [2026-01-28], [Reflect changes with microservice architecture. Will be using gRPC and unison with AWS SQS for asynchronous message passing],
+  [4.0], [2026-02-08], [Submission for Milestone 3 (Proposal Draft 4)],
 
 )
 
